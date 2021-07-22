@@ -1,6 +1,6 @@
 package pers.noxcode.autotrans.trans.baidu;
-
 import org.apache.commons.codec.digest.DigestUtils;
+import org.json.JSONObject;
 import pers.noxcode.autotrans.trans.api.Translator;
 import pers.noxcode.autotrans.trans.consts.LogManager;
 import javax.net.ssl.SSLContext;
@@ -20,7 +20,6 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.Properties;
-
 
 /**
  * 百度翻译
@@ -129,8 +128,10 @@ public class BaiduTranslator implements Translator {
         try {
             //发送请求
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            return response.body();
+            return handleResult(response.body());
         } catch (IOException | InterruptedException e) {
+            LogManager.LOGGER.error("连接服务器失败，请检查网络");
+            //TODO
             e.printStackTrace();
         }
         return null;
@@ -187,5 +188,14 @@ public class BaiduTranslator implements Translator {
      */
     private String urlEncode(String src) {
         return URLEncoder.encode(src, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * 用于处理响应结果，提取翻译结果
+     * @param result 响应
+     * @return 翻译结果
+     */
+    private String handleResult(String result) {
+        return new JSONObject(result).getJSONArray("trans_result").getJSONObject(0).getString("dst");
     }
 }
