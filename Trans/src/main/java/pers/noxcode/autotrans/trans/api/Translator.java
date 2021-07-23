@@ -1,6 +1,5 @@
 package pers.noxcode.autotrans.trans.api;
-
-import pers.noxcode.autotrans.trans.factory.TranslatorFactory;
+import pers.noxcode.autotrans.trans.baidu.BaiduTranslator;
 
 /**
  * 翻译器的接口
@@ -36,11 +35,11 @@ public interface Translator {
     String translate(String src, String to);
 
     /**
-     * 获取一个翻译器的实例对象由{@link TranslatorFactory} 实现
-     * @see TranslatorFactory
+     * 获取一个翻译器的实例对象由{@link BaiduTranslator} 实现
+     * @see BaiduTranslator
      * @return 实例对象
      */
-    static Translator newInstance(){
-        return TranslatorFactory.newTranslator();
+    static Translator newBaiduTranslator(){
+        return new BaiduTranslator();
     }
 }

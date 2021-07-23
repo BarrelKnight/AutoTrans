@@ -1,6 +1,7 @@
 package pers.noxcode.autotrans.trans.baidu;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.json.JSONObject;
+import pers.noxcode.autotrans.trans.api.SituationHandle;
 import pers.noxcode.autotrans.trans.api.Translator;
 import pers.noxcode.autotrans.trans.consts.LogManager;
 import javax.net.ssl.SSLContext;
@@ -60,9 +61,9 @@ public class BaiduTranslator implements Translator {
         try {
             properties.load(inputStream);
         } catch (IOException e) {
-            LogManager.LOGGER.error("配置文件：Translator.properties丢失，请检查配置文件");
-            //TODO
-            e.printStackTrace();
+            String info = "配置文件：Translator.properties丢失，请检查配置文件";
+            LogManager.LOGGER.error(info);
+            SituationHandle.SITUATION_HANDLE.situationHandle(info, e);
         }
         //非空检测
         try {
@@ -71,9 +72,9 @@ public class BaiduTranslator implements Translator {
             TRANS_API_HOST = Optional.of(properties.getProperty("baidu_trans_host")).get();
             connectionTimeout = Optional.of(properties.getProperty("baidu_connection_timeout")).get();
         } catch (NullPointerException e) {
-            LogManager.LOGGER.fatal("配置文件异常，请检查配置文件的内容是否为空");
-            //TODO
-            e.printStackTrace();
+            String info = "配置文件异常，请检查配置文件的内容是否为空";
+            LogManager.LOGGER.fatal(info);
+            SituationHandle.SITUATION_HANDLE.situationHandle(info, e);
         }
     }
 
@@ -97,12 +98,14 @@ public class BaiduTranslator implements Translator {
 
             sslcontext.init(null, new TrustManager[]{x509TrustManager}, null);
         } catch (NoSuchAlgorithmException e) {
-            LogManager.LOGGER.error("未知错误，获取SSLContext失败，请重试");
-            e.printStackTrace();
+            String info = "未知错误，获取SSLContext失败，请重试";
+            LogManager.LOGGER.error(info);
+            SituationHandle.SITUATION_HANDLE.situationHandle(info, e);
             return;
         } catch (KeyManagementException e) {
-            LogManager.LOGGER.error("未知错误，ssl初始化失败，请重试");
-            e.printStackTrace();
+            String info = "未知错误，ssl初始化失败，请重试";
+            LogManager.LOGGER.error(info);
+            SituationHandle.SITUATION_HANDLE.situationHandle(info, e);
             return;
         }
         httpClient = HttpClient.newBuilder()
@@ -130,9 +133,9 @@ public class BaiduTranslator implements Translator {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             return handleResult(response.body());
         } catch (IOException | InterruptedException e) {
-            LogManager.LOGGER.error("连接服务器失败，请检查网络");
-            //TODO
-            e.printStackTrace();
+            String info = "连接服务器失败，请检查网络";
+            LogManager.LOGGER.error(info);
+            SituationHandle.SITUATION_HANDLE.situationHandle(info, e);
         }
         return null;
     }
