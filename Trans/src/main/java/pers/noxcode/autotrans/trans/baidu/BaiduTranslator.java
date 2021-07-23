@@ -1,9 +1,11 @@
 package pers.noxcode.autotrans.trans.baidu;
+
 import org.apache.commons.codec.digest.DigestUtils;
 import org.json.JSONObject;
-import pers.noxcode.autotrans.trans.api.SituationHandle;
+import pers.noxcode.autotrans.trans.api.ExceptionManager;
+import pers.noxcode.autotrans.trans.api.LogManager;
 import pers.noxcode.autotrans.trans.api.Translator;
-import pers.noxcode.autotrans.trans.consts.LogManager;
+
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
@@ -24,6 +26,7 @@ import java.util.Properties;
 
 /**
  * 百度翻译
+ *
  * @author van人之雄
  * @version 1.0
  * @date 2021.07.22
@@ -48,12 +51,6 @@ public class BaiduTranslator implements Translator {
      */
     private static String connectionTimeout;
 
-    /**
-     * 用于访问百度的服务器
-     */
-    private HttpClient httpClient;
-
-
     //从配置文件中读取，初始化app_id和密钥
     static {
         InputStream inputStream = BaiduTranslator.class.getClassLoader().getResourceAsStream("Translator.properties");
@@ -62,8 +59,8 @@ public class BaiduTranslator implements Translator {
             properties.load(inputStream);
         } catch (IOException e) {
             String info = "配置文件：Translator.properties丢失，请检查配置文件";
-            LogManager.LOGGER.error(info);
-            SituationHandle.SITUATION_HANDLE.situationHandle(info, e);
+            LogManager.getLogger().error(info);
+            ExceptionManager.getSituationHandle().situationHandle(info);
         }
         //非空检测
         try {
@@ -73,10 +70,15 @@ public class BaiduTranslator implements Translator {
             connectionTimeout = Optional.of(properties.getProperty("baidu_connection_timeout")).get();
         } catch (NullPointerException e) {
             String info = "配置文件异常，请检查配置文件的内容是否为空";
-            LogManager.LOGGER.fatal(info);
-            SituationHandle.SITUATION_HANDLE.situationHandle(info, e);
+            LogManager.getLogger().fatal(info);
+            ExceptionManager.getSituationHandle().situationHandle(info);
         }
     }
+
+    /**
+     * 用于访问百度的服务器
+     */
+    private HttpClient httpClient;
 
     /**
      * 初始化httpClient
@@ -89,23 +91,29 @@ public class BaiduTranslator implements Translator {
             //ssl初始化的参数，不做任何处理
             X509TrustManager x509TrustManager = new X509TrustManager() {
                 @Override
-                public void checkClientTrusted(X509Certificate[] x509Certificates, String s) {}
+                public void checkClientTrusted(X509Certificate[] x509Certificates, String s) {
+                }
+
                 @Override
-                public void checkServerTrusted(X509Certificate[] x509Certificates, String s) {}
+                public void checkServerTrusted(X509Certificate[] x509Certificates, String s) {
+                }
+
                 @Override
-                public X509Certificate[] getAcceptedIssuers() {return null;}
+                public X509Certificate[] getAcceptedIssuers() {
+                    return null;
+                }
             };
 
             sslcontext.init(null, new TrustManager[]{x509TrustManager}, null);
         } catch (NoSuchAlgorithmException e) {
             String info = "未知错误，获取SSLContext失败，请重试";
-            LogManager.LOGGER.error(info);
-            SituationHandle.SITUATION_HANDLE.situationHandle(info, e);
+            LogManager.getLogger().error(info);
+            ExceptionManager.getSituationHandle().situationHandle(info);
             return;
         } catch (KeyManagementException e) {
             String info = "未知错误，ssl初始化失败，请重试";
-            LogManager.LOGGER.error(info);
-            SituationHandle.SITUATION_HANDLE.situationHandle(info, e);
+            LogManager.getLogger().error(info);
+            ExceptionManager.getSituationHandle().situationHandle(info);
             return;
         }
         httpClient = HttpClient.newBuilder()
@@ -116,6 +124,7 @@ public class BaiduTranslator implements Translator {
 
     /**
      * 标准的翻译方法
+     *
      * @param src  要翻译的文本内容， 为保证翻译的准确性要求在6000个字节以内
      * @param from 文本的原语言的代码，具体请参照项目的语种对照表 或访问{https://api.fanyi.baidu.com/doc/21}
      * @param to   目标语言的代码，同上
@@ -134,17 +143,19 @@ public class BaiduTranslator implements Translator {
             return handleResult(response.body());
         } catch (IOException | InterruptedException e) {
             String info = "连接服务器失败，请检查网络";
-            LogManager.LOGGER.error(info);
-            SituationHandle.SITUATION_HANDLE.situationHandle(info, e);
+            LogManager.getLogger().error(info);
+            ExceptionManager.getSituationHandle().situationHandle(info);
         }
         return null;
     }
 
     /**
      * 自动识别原语种并翻译为中文，需要原语种支持自动语种识别, 具体请参照项目的语种对照表 或访问{https://api.fanyi.baidu.com/doc/21}
+     *
      * @param src 要翻译的文本内容， 为保证翻译的准确性要求在6000个字节以内
      * @return 翻译后的文本，翻译失败返回null
      */
+    @SuppressWarnings("unused")
     @Override
     public String translate(String src) {
         return translate(src, "auto", "zh");
@@ -165,9 +176,10 @@ public class BaiduTranslator implements Translator {
 
     /**
      * 通过参数，安装百度翻译的协议构建url
+     *
      * @param query 要翻译的文本内容， 为保证翻译的准确性要求在6000个字节以内
-     * @param from 文本的原语言的代码，具体请参照项目的语种对照表 或访问{https://api.fanyi.baidu.com/doc/21}
-     * @param to 目标语言的代码，具体请参照项目的语种对照表 或访问{https://api.fanyi.baidu.com/doc/21}
+     * @param from  文本的原语言的代码，具体请参照项目的语种对照表 或访问{https://api.fanyi.baidu.com/doc/21}
+     * @param to    目标语言的代码，具体请参照项目的语种对照表 或访问{https://api.fanyi.baidu.com/doc/21}
      * @return 构建完成的url
      */
     private String getUrlWithQueryString(String query, String from, String to) {
@@ -186,6 +198,7 @@ public class BaiduTranslator implements Translator {
     /**
      * 为了使代码跟美观，提取的公共代码
      * 对字符串进行URL编码
+     *
      * @param src 源字符串
      * @return 编码的结果，以字符串形式
      */
@@ -195,6 +208,7 @@ public class BaiduTranslator implements Translator {
 
     /**
      * 用于处理响应结果，提取翻译结果
+     *
      * @param result 响应
      * @return 翻译结果
      */
